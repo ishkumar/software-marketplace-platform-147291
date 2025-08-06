@@ -1,7 +1,27 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
 # PUBLIC_INTERFACE
-class User(models.Model):
+class UserManager(BaseUserManager):
+    """Manager for User providing create_user and create_superuser."""
+
+    def create_user(self, username, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Users must have an email address')
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_publisher', True)
+        return self.create_user(username, email, password, **extra_fields)
+
+# PUBLIC_INTERFACE
+class User(AbstractBaseUser, PermissionsMixin):
     """Marketplace user, includes publishers and regular users."""
     PROVIDER_CHOICES = [
         ('local', 'Local'),
@@ -10,16 +30,28 @@ class User(models.Model):
     ]
     username = models.CharField(max_length=64, unique=True)
     email = models.EmailField(unique=True)
-    password_hash = models.CharField(max_length=255, blank=True, null=True)
-    provider = models.CharField(max_length=10, choices=PROVIDER_CHOICES, default='local')
     full_name = models.CharField(max_length=128, blank=True, null=True)
     avatar_url = models.URLField(max_length=512, blank=True, null=True)
+    provider = models.CharField(max_length=10, choices=PROVIDER_CHOICES, default='local')
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
     is_publisher = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
+    objects = UserManager()
+
     def __str__(self):
         return self.username
+
+    # PUBLIC_INTERFACE
+    def set_password(self, raw_password):
+        super().set_password(raw_password)
+
+    # PUBLIC_INTERFACE
+    def check_password(self, raw_password):
+        return super().check_password(raw_password)
 
 # PUBLIC_INTERFACE
 class Listing(models.Model):

@@ -12,6 +12,10 @@ from .auth_views import (
     register, login_view, logout_view, profile,
     google_login, github_login,
 )
+from .payment_views import (
+    create_checkout_session,
+    stripe_webhook,
+)
 
 urlpatterns = [
     path('health/', health, name='Health'),
@@ -31,4 +35,8 @@ urlpatterns = [
     # Engagement
     path('listings/<int:listing_id>/engage/', engage_listing, name='engage-listing'),
     path('engagements/', EngagementListView.as_view(), name='user-engagements'),
+
+    # Stripe payment endpoints
+    path('payment/checkout-session/', create_checkout_session, name='payment-checkout-session'),
+    path('payment/stripe-webhook/', stripe_webhook, name='payment-stripe-webhook'),
 ]

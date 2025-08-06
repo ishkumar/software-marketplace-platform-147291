@@ -4,6 +4,23 @@ from rest_framework import serializers
 from .models import User, Listing, Like, Engagement
 
 # PUBLIC_INTERFACE
+class StripeCheckoutSessionSerializer(serializers.Serializer):
+    """Serializer for starting a Stripe checkout session."""
+    listing_id = serializers.IntegerField()
+    transaction_type = serializers.ChoiceField(choices=["purchase", "subscription"])
+
+# PUBLIC_INTERFACE
+class StripeCheckoutSessionResponseSerializer(serializers.Serializer):
+    """Return value for checkout session initiation."""
+    session_url = serializers.CharField()
+
+# PUBLIC_INTERFACE
+class StripeWebhookSerializer(serializers.Serializer):
+    """Minimal serializer for Stripe event webhook."""
+    event_type = serializers.CharField()
+    data = serializers.JSONField()
+
+# PUBLIC_INTERFACE
 class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
     password = serializers.CharField(write_only=True, required=True, min_length=6)

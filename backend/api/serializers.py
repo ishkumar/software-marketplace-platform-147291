@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
-from .models import User
+from .models import User, Listing, Like, Engagement
 
 # PUBLIC_INTERFACE
 class RegisterSerializer(serializers.ModelSerializer):
@@ -42,3 +42,44 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'full_name', 'avatar_url', 'provider', 'is_publisher')
+
+
+# PUBLIC_INTERFACE
+class ListingSerializer(serializers.ModelSerializer):
+    """Serializer for software listings."""
+    publisher = UserSerializer(read_only=True)
+    like_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = [
+            'id', 'publisher', 'title', 'summary', 'application_type',
+            'is_paid', 'price', 'download_url', 'external_link', 'created_at',
+            'updated_at', 'tags', 'like_count'
+        ]
+
+    def get_like_count(self, obj):
+        return obj.likes.count()
+
+
+# PUBLIC_INTERFACE
+class LikeSerializer(serializers.ModelSerializer):
+    """Serializer for like on a listing."""
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'listing', 'created_at']
+
+
+# PUBLIC_INTERFACE
+class EngagementSerializer(serializers.ModelSerializer):
+    """Serializer for engagement between user and publisher (messaging/contact)."""
+    sender = UserSerializer(read_only=True)
+    recipient = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Engagement
+        fields = [
+            'id', 'sender', 'recipient', 'listing', 'message',
+            'status', 'created_at'
+        ]

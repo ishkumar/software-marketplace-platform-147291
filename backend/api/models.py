@@ -73,6 +73,10 @@ class Listing(models.Model):
     external_link = models.URLField(max_length=512, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # New field: tags for filtering
+    tags = models.JSONField(default=list, blank=True)
+
     def __str__(self):
         return self.title
 

@@ -98,5 +98,6 @@ class EngagementSerializer(serializers.ModelSerializer):
         model = Engagement
         fields = [
             'id', 'sender', 'recipient', 'listing', 'message',
-            'status', 'created_at'
+            'status', 'created_at', 'sender_read', 'recipient_read'
         ]
+        read_only_fields = ['id', 'sender', 'recipient', 'listing', 'created_at', 'sender_read', 'recipient_read']

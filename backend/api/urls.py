@@ -7,6 +7,11 @@ from .views import (
     unlike_listing,
     engage_listing,
     EngagementListView,
+    EngagementDetailView,
+    InboxEngagementListView,
+    OutboxEngagementListView,
+    mark_engagement_read,
+    notifications_list,
 )
 from .auth_views import (
     register, login_view, logout_view, profile,
@@ -32,9 +37,14 @@ urlpatterns = [
     # Like / Unlike
     path('listings/<int:listing_id>/like/', like_listing, name='like-listing'),
     path('listings/<int:listing_id>/unlike/', unlike_listing, name='unlike-listing'),
-    # Engagement
+    # Engagement (messaging) endpoints
     path('listings/<int:listing_id>/engage/', engage_listing, name='engage-listing'),
     path('engagements/', EngagementListView.as_view(), name='user-engagements'),
+    path('engagements/<int:pk>/', EngagementDetailView.as_view(), name='engagement-detail'),
+    path('engagements/inbox/', InboxEngagementListView.as_view(), name='engagement-inbox'),
+    path('engagements/outbox/', OutboxEngagementListView.as_view(), name='engagement-outbox'),
+    path('engagements/<int:pk>/mark-read/', mark_engagement_read, name='engagement-mark-read'),
+    path('notifications/', notifications_list, name='notifications-list'),  # Placeholder
 
     # Stripe payment endpoints
     path('payment/checkout-session/', create_checkout_session, name='payment-checkout-session'),

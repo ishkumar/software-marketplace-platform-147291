@@ -6,6 +6,7 @@ from .serializers import (
     ListingSerializer, EngagementSerializer
 )
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 @api_view(['GET'])
 def health(request):
@@ -111,17 +112,119 @@ def engage_listing(request, listing_id):
         recipient=listing.publisher,
         listing=listing,
         message=message,
-        status='pending'
+        status='pending',
+        sender_read=True,
+        recipient_read=False,
     )
     return Response(EngagementSerializer(engagement).data, status=status.HTTP_201_CREATED)
 
 
 # PUBLIC_INTERFACE
 class EngagementListView(generics.ListAPIView):
-    """List engagements for current user (sent or received)."""
+    """
+    List all engagements for current user (both inbox and outbox).
+    """
     serializer_class = EngagementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         return Engagement.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-created_at')
+
+
+# PUBLIC_INTERFACE
+class InboxEngagementListView(generics.ListAPIView):
+    """
+    List all engagements received by the currently authenticated user ("inbox").
+    """
+    serializer_class = EngagementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Engagement.objects.filter(
+            recipient=self.request.user
+        ).order_by('-created_at')
+
+
+# PUBLIC_INTERFACE
+class OutboxEngagementListView(generics.ListAPIView):
+    """
+    List all engagements sent by the currently authenticated user ("outbox").
+    """
+    serializer_class = EngagementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Engagement.objects.filter(
+            sender=self.request.user
+        ).order_by('-created_at')
+
+
+# PUBLIC_INTERFACE
+class EngagementDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update (status/message/read), or delete a specific engagement (if sender or recipient).
+    PATCH/PUT payload may include status, message, and will also mark as read for the accessing user.
+    """
+    queryset = Engagement.objects.all()
+    serializer_class = EngagementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        # Only allow sender or recipient
+        if obj.sender != user and obj.recipient != user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Not authorized.")
+        return obj
+
+    def perform_update(self, serializer):
+        """
+        On update, mark engagement as read for the updating user.
+        """
+        engagement = serializer.instance
+        user = self.request.user
+        data = serializer.validated_data
+        # Mark as read by who updates/view
+        if user == engagement.recipient:
+            data['recipient_read'] = True
+        elif user == engagement.sender:
+            data['sender_read'] = True
+        serializer.save()
+
+
+# PUBLIC_INTERFACE
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mark_engagement_read(request, pk):
+    """
+    Mark an engagement (message) as read for the current user.
+    """
+    engagement = get_object_or_404(Engagement, pk=pk)
+    user = request.user
+    if engagement.recipient == user:
+        engagement.recipient_read = True
+    elif engagement.sender == user:
+        engagement.sender_read = True
+    else:
+        return Response({'detail': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+    engagement.save()
+    return Response({"detail": "Marked as read."})
+
+
+# PUBLIC_INTERFACE
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def notifications_list(request):
+    """
+    List notifications for the current user.
+    (Placeholder: For now, returns count/new engagements. To be extended for richer UX.)
+    """
+    user = request.user
+    unread_inbox_count = Engagement.objects.filter(recipient=user, recipient_read=False).count()
+    # Optionally, include outgoing unread (rarely used)
+    return Response({
+        "unread_inbox_count": unread_inbox_count,
+        "notification_types": ["engagement:new_message"],
+    })

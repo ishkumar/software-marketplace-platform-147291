@@ -129,3 +129,10 @@ class Engagement(models.Model):
     message = models.TextField(blank=True)
     status = models.CharField(max_length=16, choices=ENGAGEMENT_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # New: read flags for inbox (recipient) and outbox (sender)
+    sender_read = models.BooleanField(default=True)  # always True for new
+    recipient_read = models.BooleanField(default=False)  # New engagement: unread for recipient
+
+    def __str__(self):
+        return f"From {self.sender} to {self.recipient} ({self.status}): {self.message[:30]}"

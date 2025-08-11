@@ -24,6 +24,8 @@ from django.views.decorators.csrf import csrf_exempt
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('accounts/', include('allauth.urls')),  # Default allauth login/logout endpoints
+    path('social/', include('allauth.socialaccount.urls')),  # Social login/callback endpoints
 ]
 
 schema_view = get_schema_view(
@@ -63,5 +65,5 @@ def dynamic_schema_view(request, *args, **kwargs):
 urlpatterns += [
     re_path(r'^docs/$', dynamic_schema_view, name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    re_path(r'^swagger\.json$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^swagger\\.json$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
 ]

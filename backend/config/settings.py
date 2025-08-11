@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.linkedin',
     'api'
 ]
 
@@ -173,6 +175,42 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': os.environ.get("GITHUB_CLIENT_SECRET", ''),
             'key': '',
         }
+    },
+    'facebook': {
+        'APP': {
+            'client_id': os.environ.get("FACEBOOK_CLIENT_ID", ''),
+            'secret': os.environ.get("FACEBOOK_CLIENT_SECRET", ''),
+            'key': '',
+        },
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'picture',
+            'short_name'
+        ],
+    },
+    'linkedin': {
+        'APP': {
+            'client_id': os.environ.get("LINKEDIN_CLIENT_ID", ''),
+            'secret': os.environ.get("LINKEDIN_CLIENT_SECRET", ''),
+            'key': '',
+        },
+        'SCOPE': [
+            'r_liteprofile', 
+            'r_emailaddress'
+        ],
+        'PROFILE_FIELDS': [
+            'id',
+            'first-name',
+            'last-name',
+            'email-address',
+            'picture-url'
+        ],
     }
 }
 # Stripe keys for payment integration
